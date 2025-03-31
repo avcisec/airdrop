@@ -12,6 +12,7 @@ contract MerkeAirdropTest is Test {
     DonutToken public donutToken;
     bytes32 root = 0xca31c071cd40873a7c9d25d6a52f12de6d807a2cda648fe659fbef1ba2a56097;
     address user;
+    address gasSponsor;
     address user2 = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     uint256 userPrivKey;
     uint256 public AMOUNT_TO_CLAIM = 25 * 1e18;
@@ -24,21 +25,27 @@ contract MerkeAirdropTest is Test {
         DeployMerkleAirdrop deployer = new DeployMerkleAirdrop();
         (airdrop, donutToken) = deployer.deployMerkleAirdrop();
         (user, userPrivKey) = makeAddrAndKey("user");
+        gasSponsor = makeAddr("gasSponsor");
 
     }
 
     function testUserCanClaim() public {
         uint256 startingBalance = donutToken.balanceOf(user);
+        bytes32 digest = airdrop.getMessageHash(user, AMOUNT_TO_CLAIM);
+        vm.prank(user);
+        // sign a message
+        (uint8 v,bytes32 r,bytes32 s) = vm.sign(userPrivKey, digest);
 
-        vm.startPrank(user);
+        // gasSponsor calls claim using the signed message
+
         console.log("Claim status before claiming:", airdrop.getClaimStatus(user));
-        airdrop.claim(user, AMOUNT_TO_CLAIM, PROOF);
+        vm.prank(gasSponsor);
+        airdrop.claim(user, AMOUNT_TO_CLAIM, PROOF, v, r, s);
         uint256 endingBalance = donutToken.balanceOf(user);
         assertEq(endingBalance - startingBalance, AMOUNT_TO_CLAIM);
         console.log("Starting Balance:", startingBalance);
         console.log("Ending Balance:", endingBalance);
         console.log("Claim status after claiming:", airdrop.getClaimStatus(user));
-        vm.stopPrank();
 
     }
 
