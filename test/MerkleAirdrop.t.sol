@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import {Test,console} from "forge-std/Test.sol";
+import {Test, console} from "forge-std/Test.sol";
 import {MerkleAirdrop} from "../src/MerkleAirdrop.sol";
 import {DonutToken} from "../src/DonutToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -19,14 +19,13 @@ contract MerkeAirdropTest is Test {
     uint256 public MINT_AMOUNT = 1000 * 1e18;
     bytes32 public PROOF1 = 0x0fd7c981d39bece61f7499702bf59b3114a90e66b51ba2c53abdf7b62986c00a;
     bytes32 public PROOF2 = 0xf453e13b4dee79db360280e56f90b095fe63443a088a2ed68c8387b4da3abdd8;
-    bytes32[] public PROOF = [PROOF1, PROOF2]; 
+    bytes32[] public PROOF = [PROOF1, PROOF2];
+
     function setUp() public {
-        
         DeployMerkleAirdrop deployer = new DeployMerkleAirdrop();
         (airdrop, donutToken) = deployer.deployMerkleAirdrop();
         (user, userPrivKey) = makeAddrAndKey("user");
         gasSponsor = makeAddr("gasSponsor");
-
     }
 
     function testUserCanClaim() public {
@@ -34,7 +33,7 @@ contract MerkeAirdropTest is Test {
         bytes32 digest = airdrop.getMessageHash(user, AMOUNT_TO_CLAIM);
         vm.prank(user);
         // sign a message
-        (uint8 v,bytes32 r,bytes32 s) = vm.sign(userPrivKey, digest);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivKey, digest);
 
         // gasSponsor calls claim using the signed message
 
@@ -46,7 +45,5 @@ contract MerkeAirdropTest is Test {
         console.log("Starting Balance:", startingBalance);
         console.log("Ending Balance:", endingBalance);
         console.log("Claim status after claiming:", airdrop.getClaimStatus(user));
-
     }
-
 }

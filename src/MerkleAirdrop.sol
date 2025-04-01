@@ -28,7 +28,7 @@ pragma solidity 0.8.24;
 /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol"; 
+import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
@@ -55,9 +55,9 @@ contract MerkleAirdrop is EIP712 {
      */
     // allow someone in the list to claim tokens
 
-/*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-/*                     Type Declarations                      */
-/*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+    /*                     Type Declarations                      */
+    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
     using SafeERC20 for IERC20;
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -75,23 +75,22 @@ contract MerkleAirdrop is EIP712 {
         uint256 amount;
     }
 
-
-/**
- * Aşağıdaki mapping claimed kullanıcıları takip etmek içn en ideal yöntem değildir.
- * Böyle bir mapping oluşturduğumuzda her bir boolean değeri için komple storage slotu alırız. 
- * Her bir adresin storage slotu olur. Bu gas tüketimi açısından etkin bir çözüm değildir.
- * Peki ne yapabiliriz?
- * Bool[] yöntemi
- * Yaprakları off-chain hazırladığımız bir senaryo için, 
- * her bir yaprak için index değeri atarsak ve boolean değerini verirsek 
- * kullanıcı claim fonksiyonunu çağırdığında index değerini bool dizisinde ararız ve kullanıcının
- * airdrop hakkı varsa false olan değeri true yapar kullanıcıya tokeni aktarırız.
- * boolean 8 bittir oyüzden gene de ihtiyacımız olandan fazla bit kullanmış olacağız. Daha da optimize  edebiliriz.
- * 
- * uint256[] yöntemi
- * mapping(uint256 => uint256) yöntemi
- * 
- */
+    /**
+     * Aşağıdaki mapping claimed kullanıcıları takip etmek içn en ideal yöntem değildir.
+     * Böyle bir mapping oluşturduğumuzda her bir boolean değeri için komple storage slotu alırız.
+     * Her bir adresin storage slotu olur. Bu gas tüketimi açısından etkin bir çözüm değildir.
+     * Peki ne yapabiliriz?
+     * Bool[] yöntemi
+     * Yaprakları off-chain hazırladığımız bir senaryo için,
+     * her bir yaprak için index değeri atarsak ve boolean değerini verirsek
+     * kullanıcı claim fonksiyonunu çağırdığında index değerini bool dizisinde ararız ve kullanıcının
+     * airdrop hakkı varsa false olan değeri true yapar kullanıcıya tokeni aktarırız.
+     * boolean 8 bittir oyüzden gene de ihtiyacımız olandan fazla bit kullanmış olacağız. Daha da optimize  edebiliriz.
+     *
+     * uint256[] yöntemi
+     * mapping(uint256 => uint256) yöntemi
+     *
+     */
     mapping(address user => bool claimed) private s_claimed;
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -109,18 +108,18 @@ contract MerkleAirdrop is EIP712 {
         i_airdropToken = airdropToken;
     }
 
-    function claim(address account, uint256 amount, bytes32[] calldata merkleProof, uint8 v, bytes32 r, bytes32 s) external {
-
-        if(s_claimed[account]) {
+    function claim(address account, uint256 amount, bytes32[] calldata merkleProof, uint8 v, bytes32 r, bytes32 s)
+        external
+    {
+        if (s_claimed[account]) {
             revert MerkleAirdrop__AlreadyClaimed();
         }
         //check the signature
 
-        if(!_isValidSignature(account, getMessageHash(account, amount), v, r, s)) {
+        if (!_isValidSignature(account, getMessageHash(account, amount), v, r, s)) {
             revert MerkleAirdrop__InvalidSignature();
         }
 
-        
         // calculate using the account and  the amount, the hash --> leaf node
         // when we are using merkle proofs, we need to hash it twice to prevent collision.
         // If we hash it twice, we are avoiding hash collision problem. This is known as Second pre-image attack
@@ -136,27 +135,30 @@ contract MerkleAirdrop is EIP712 {
         i_airdropToken.safeTransfer(account, amount);
     }
 
-    function _isValidSignature(address account, bytes32 digest, uint8 v, bytes32 r, bytes32 s) internal pure returns (bool) {
-        (address actualSigner, , ) = ECDSA.tryRecover(digest, v, r, s);
-        
+    function _isValidSignature(address account, bytes32 digest, uint8 v, bytes32 r, bytes32 s)
+        internal
+        pure
+        returns (bool)
+    {
+        (address actualSigner,,) = ECDSA.tryRecover(digest, v, r, s);
+
         return actualSigner == account;
-
     }
 
-
-    function getMessageHash(address account, uint256 amount) public view returns(bytes32) {
-        return _hashTypedDataV4(keccak256(abi.encode(MESSAGE_TYPEHASH, AirdropClaim({account: account, amount: amount}))));
+    function getMessageHash(address account, uint256 amount) public view returns (bytes32) {
+        return
+            _hashTypedDataV4(keccak256(abi.encode(MESSAGE_TYPEHASH, AirdropClaim({account: account, amount: amount}))));
     }
 
-    function getMerkleRoot() external view returns(bytes32) {
+    function getMerkleRoot() external view returns (bytes32) {
         return i_merkleRoot;
     }
 
-    function getAirdropToken() external view returns(IERC20) {
+    function getAirdropToken() external view returns (IERC20) {
         return i_airdropToken;
     }
 
-    function getClaimStatus(address user) external view returns(bool) {
+    function getClaimStatus(address user) external view returns (bool) {
         return s_claimed[user];
     }
 }
